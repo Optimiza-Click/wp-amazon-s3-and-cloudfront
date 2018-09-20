@@ -911,6 +911,12 @@ class Amazon_S3_And_CloudFront extends AS3CF_Plugin_Base {
 		// finally delete the objects from S3
 		$this->delete_s3_objects( $region, $bucket, $objects_to_remove, $log_error, $return_on_error, $force_new_s3_client );
 	}
+	
+	function isImageOwner($s3object) {
+        	preg_match("/\/sites\/(\d+)/", $s3object, $result);
+
+        	return get_current_blog_id() === intval($result[1]);
+    	}
 
 	/**
 	 * Removes an attachment and intermediate image size files from S3
@@ -927,9 +933,10 @@ class Amazon_S3_And_CloudFront extends AS3CF_Plugin_Base {
 		if ( ! ( $s3object = $this->get_attachment_s3_info( $post_id ) ) ) {
 			return;
 		}
-
-		$this->remove_attachment_files_from_s3( $post_id, $s3object, true, true, true, $force_new_s3_client );
-
+		if($this->isImageOwner($s3object['key'])) {
+			$this->remove_attachment_files_from_s3( $post_id, $s3object, true, true, true, $force_new_s3_client );
+ 		}
+		
 		delete_post_meta( $post_id, 'amazonS3_info' );
 	}
 
